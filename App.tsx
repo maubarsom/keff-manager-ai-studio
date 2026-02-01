@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { HashRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
-import { Users, Calendar, Trophy, ChevronRight } from 'lucide-react';
+import { Users, Calendar, Trophy, MapPin } from 'lucide-react';
 import PlayersModule from './components/PlayersModule';
 import TrainingsModule from './components/TrainingsModule';
 import TrainingDetail from './components/TrainingDetail';
+import PitchesModule from './components/PitchesModule';
 
 const Navigation = () => {
   return (
@@ -12,6 +13,10 @@ const Navigation = () => {
       <Link to="/players" className="flex flex-col md:flex-row items-center gap-1 text-slate-600 hover:text-blue-600 transition-colors">
         <Users size={20} />
         <span className="text-xs md:text-sm font-medium">Players</span>
+      </Link>
+      <Link to="/pitches" className="flex flex-col md:flex-row items-center gap-1 text-slate-600 hover:text-blue-600 transition-colors">
+        <MapPin size={20} />
+        <span className="text-xs md:text-sm font-medium">Pitches</span>
       </Link>
       <Link to="/trainings" className="flex flex-col md:flex-row items-center gap-1 text-slate-600 hover:text-blue-600 transition-colors">
         <Calendar size={20} />
@@ -41,6 +46,7 @@ const App: React.FC = () => {
         <main className="flex-1 max-w-5xl w-full mx-auto p-4 md:p-8">
           <Routes>
             <Route path="/players" element={<PlayersModule />} />
+            <Route path="/pitches" element={<PitchesModule />} />
             <Route path="/trainings" element={<TrainingsModule />} />
             <Route path="/trainings/:id" element={<TrainingDetail />} />
             <Route path="/" element={<Navigate to="/trainings" replace />} />

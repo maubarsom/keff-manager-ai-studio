@@ -1,21 +1,39 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, MapPin, Calendar as CalendarIcon, Clock, Trash2, ChevronRight } from 'lucide-react';
-import { Training } from '../types';
+import { Plus, MapPin, Calendar as CalendarIcon, Clock, Trash2, ChevronRight, Search, ChevronDown } from 'lucide-react';
+import { Training, Pitch } from '../types';
 import { storageService } from '../services/storageService';
 
 const TrainingsModule: React.FC = () => {
   const [trainings, setTrainings] = useState<Training[]>([]);
+  const [pitches, setPitches] = useState<Pitch[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [newLocation, setNewLocation] = useState('');
   const [newMatchLength, setNewMatchLength] = useState('4');
   const [error, setError] = useState('');
+  
+  // Searchable dropdown state
+  const [showPitchOptions, setShowPitchOptions] = useState(false);
+  const [pitchSearch, setPitchSearch] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
     setTrainings(storageService.getTrainings());
+    setPitches(storageService.getPitches());
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowPitchOptions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleCreateTraining = (e: React.FormEvent) => {
@@ -39,9 +57,9 @@ const TrainingsModule: React.FC = () => {
     setTrainings(updated);
     storageService.saveTrainings(updated);
     setIsCreating(false);
-    // Reset defaults for next time
     setNewDate(new Date().toISOString().split('T')[0]);
     setNewLocation('');
+    setPitchSearch('');
     setNewMatchLength('4');
     navigate(`/trainings/${newTraining.id}`);
   };
@@ -54,6 +72,10 @@ const TrainingsModule: React.FC = () => {
       storageService.saveTrainings(updated);
     }
   };
+
+  const filteredPitches = pitches.filter(p => 
+    p.name.toLowerCase().includes(pitchSearch.toLowerCase())
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -88,17 +110,57 @@ const TrainingsModule: React.FC = () => {
                 className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
-              <input
-                type="text"
-                required
-                placeholder="Stadium A, Pitch 3"
-                value={newLocation}
-                onChange={(e) => setNewLocation(e.target.value)}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            
+            <div className="relative" ref={dropdownRef}>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Location (Pitch)</label>
+              <div 
+                className="relative group cursor-text"
+                onClick={() => setShowPitchOptions(true)}
+              >
+                <input
+                  type="text"
+                  required
+                  autoComplete="off"
+                  placeholder="Search or type location..."
+                  value={newLocation}
+                  onChange={(e) => {
+                    setNewLocation(e.target.value);
+                    setPitchSearch(e.target.value);
+                    setShowPitchOptions(true);
+                  }}
+                  className="w-full pl-4 pr-10 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-blue-500 transition-colors pointer-events-none">
+                  {showPitchOptions ? <Search size={16} /> : <ChevronDown size={18} />}
+                </div>
+              </div>
+
+              {showPitchOptions && (
+                <div className="absolute z-[70] left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-48 overflow-y-auto overflow-x-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                  {filteredPitches.length > 0 ? (
+                    filteredPitches.map(pitch => (
+                      <button
+                        key={pitch.id}
+                        type="button"
+                        onClick={() => {
+                          setNewLocation(pitch.name);
+                          setShowPitchOptions(false);
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 hover:text-blue-600 transition-colors text-slate-700 flex items-center gap-2 border-b border-slate-50 last:border-0"
+                      >
+                        <MapPin size={14} className="opacity-50" />
+                        <span className="font-medium">{pitch.name}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-slate-400 text-sm italic">
+                      {pitchSearch ? 'No matching pitch found. Type custom name or create a pitch in Pitches module.' : 'No pitches added. Type a location below.'}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Default Match Length (mins)</label>
               <input
@@ -121,7 +183,7 @@ const TrainingsModule: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-md shadow-blue-200"
               >
                 Start Training
               </button>

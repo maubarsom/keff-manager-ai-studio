@@ -6,6 +6,11 @@ export interface Player {
   isArchived: boolean;
 }
 
+export interface Pitch {
+  id: string;
+  name: string;
+}
+
 export interface Participant {
   id: string; // Either player.id or a generated ID for guests
   name: string;

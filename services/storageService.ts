@@ -1,8 +1,9 @@
 
-import { Player, Training } from '../types';
+import { Player, Training, Pitch } from '../types';
 
 const PLAYERS_KEY = 'stt_players';
 const TRAININGS_KEY = 'stt_trainings';
+const PITCHES_KEY = 'stt_pitches';
 
 export const storageService = {
   getPlayers: (): Player[] => {
@@ -11,6 +12,13 @@ export const storageService = {
   },
   savePlayers: (players: Player[]) => {
     localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
+  },
+  getPitches: (): Pitch[] => {
+    const data = localStorage.getItem(PITCHES_KEY);
+    return data ? JSON.parse(data) : [];
+  },
+  savePitches: (pitches: Pitch[]) => {
+    localStorage.setItem(PITCHES_KEY, JSON.stringify(pitches));
   },
   getTrainings: (): Training[] => {
     const data = localStorage.getItem(TRAININGS_KEY);
