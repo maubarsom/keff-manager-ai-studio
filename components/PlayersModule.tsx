@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { UserPlus, Archive, ArchiveRestore, Trash2, Search, Eye, EyeOff, Users, Upload, FileText } from 'lucide-react';
+import { UserPlus, Archive, ArchiveRestore, Trash2, Search, Eye, EyeOff, Users, Upload } from 'lucide-react';
 import { Player } from '../types';
 import { storageService } from '../services/storageService';
 
@@ -13,35 +13,46 @@ const PlayersModule: React.FC = () => {
   const [newFullName, setNewFullName] = useState('');
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isInitialMount = useRef(true);
 
+  // Load players on mount
   useEffect(() => {
-    setPlayers(storageService.getPlayers());
+    const loadedPlayers = storageService.getPlayers();
+    setPlayers(loadedPlayers);
   }, []);
+
+  // Save players whenever the state changes (excluding initial empty load)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    storageService.savePlayers(players);
+  }, [players]);
 
   const handleAddPlayer = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!newDisplayName.trim()) {
+    const trimmedDisplayName = newDisplayName.trim();
+    if (!trimmedDisplayName) {
       setError('Display name is required');
       return;
     }
 
-    if (players.some(p => p.displayName.toLowerCase() === newDisplayName.trim().toLowerCase())) {
+    if (players.some(p => p.displayName.toLowerCase() === trimmedDisplayName.toLowerCase())) {
       setError('Display name must be unique');
       return;
     }
 
     const newPlayer: Player = {
       id: crypto.randomUUID(),
-      displayName: newDisplayName.trim(),
+      displayName: trimmedDisplayName,
       fullName: newFullName.trim(),
       isArchived: false,
     };
 
-    const updatedPlayers = [...players, newPlayer];
-    setPlayers(updatedPlayers);
-    storageService.savePlayers(updatedPlayers);
+    setPlayers(prev => [...prev, newPlayer]);
     setIsAdding(false);
     setNewDisplayName('');
     setNewFullName('');
@@ -78,39 +89,37 @@ const PlayersModule: React.FC = () => {
       });
 
       if (newPlayers.length > 0) {
-        const updatedPlayers = [...players, ...newPlayers];
-        setPlayers(updatedPlayers);
-        storageService.savePlayers(updatedPlayers);
+        setPlayers(prev => [...prev, ...newPlayers]);
         alert(`Successfully imported ${newPlayers.length} players!`);
       } else {
         alert("No new unique players found in the file. Ensure the format is: DisplayName, FullName");
       }
       
-      // Reset input so the same file can be uploaded again if needed
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
     reader.readAsText(file);
   };
 
-  const toggleArchive = (id: string) => {
-    const updatedPlayers = players.map(p => 
+  const toggleArchive = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setPlayers(prev => prev.map(p => 
       p.id === id ? { ...p, isArchived: !p.isArchived } : p
-    );
-    setPlayers(updatedPlayers);
-    storageService.savePlayers(updatedPlayers);
+    ));
   };
 
-  const deletePlayer = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this player?')) {
-      const updatedPlayers = players.filter(p => p.id !== id);
-      setPlayers(updatedPlayers);
-      storageService.savePlayers(updatedPlayers);
+  const deletePlayer = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to permanently delete this player?')) {
+      setPlayers(prev => prev.filter(p => p.id !== id));
     }
   };
 
   const filteredPlayers = players
     .filter(p => showArchived || !p.isArchived)
-    .filter(p => p.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || p.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter(p => 
+      p.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      p.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+    )
     .sort((a, b) => a.displayName.localeCompare(b.displayName));
 
   return (
@@ -157,7 +166,7 @@ const PlayersModule: React.FC = () => {
 
           <button
             onClick={() => setIsAdding(!isAdding)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
           >
             <UserPlus size={18} />
             <span className="whitespace-nowrap">Add Player</span>
@@ -229,14 +238,14 @@ const PlayersModule: React.FC = () => {
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                 <button
-                  onClick={() => toggleArchive(player.id)}
+                  onClick={(e) => toggleArchive(e, player.id)}
                   title={player.isArchived ? 'Restore' : 'Archive'}
                   className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
                 >
                   {player.isArchived ? <ArchiveRestore size={18} /> : <Archive size={18} />}
                 </button>
                 <button
-                  onClick={() => deletePlayer(player.id)}
+                  onClick={(e) => deletePlayer(e, player.id)}
                   title="Delete"
                   className="p-2 text-slate-400 hover:text-red-600 transition-colors"
                 >

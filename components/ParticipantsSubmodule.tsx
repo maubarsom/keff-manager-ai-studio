@@ -17,12 +17,19 @@ const ParticipantsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
     setAllPlayers(storageService.getPlayers());
   }, []);
 
-  // Roster: Only players who are NOT archived AND NOT currently participating in this training.
+  // Roster: Players who are NOT currently participating in this training.
+  // Sorted: Non-archived first, then archived, and alphabetically within each group.
   const roster = useMemo(() => 
     allPlayers
-      .filter(p => !p.isArchived)
       .filter(p => !training.participants.some(participant => participant.id === p.id))
-      .sort((a, b) => a.displayName.localeCompare(b.displayName)), 
+      .sort((a, b) => {
+        // First sort by archive status (unarchived first)
+        if (a.isArchived !== b.isArchived) {
+          return a.isArchived ? 1 : -1;
+        }
+        // Then sort alphabetically
+        return a.displayName.localeCompare(b.displayName);
+      }), 
   [allPlayers, training.participants]);
 
   const addPlayer = (player: Player) => {
@@ -79,18 +86,21 @@ const ParticipantsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
               <button
                 key={player.id}
                 onClick={() => addPlayer(player)}
-                className="w-full flex items-center justify-between p-3 rounded-xl border border-white bg-white hover:border-blue-300 hover:bg-blue-50/30 text-slate-600 transition-all text-left group"
+                className={`w-full flex items-center justify-between p-3 rounded-xl border border-white bg-white hover:border-blue-300 hover:bg-blue-50/30 text-slate-600 transition-all text-left group ${player.isArchived ? 'opacity-60 grayscale' : ''}`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-100 text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${player.isArchived ? 'bg-slate-200 text-slate-400' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-600 group-hover:text-white'}`}>
                     <Plus size={16} />
                   </div>
                   <div>
-                    <span className="font-bold text-sm block">{player.displayName}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm block">{player.displayName}</span>
+                      {player.isArchived && <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">Archived</span>}
+                    </div>
                     {player.fullName && <span className="text-[10px] opacity-60 truncate block max-w-[150px]">{player.fullName}</span>}
                   </div>
                 </div>
-                <ArrowRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-all transform group-hover:translate-x-1" />
+                <ArrowRight size={16} className={`transition-all transform group-hover:translate-x-1 ${player.isArchived ? 'text-slate-200' : 'text-slate-300 group-hover:text-blue-500'}`} />
               </button>
             ))}
             {roster.length === 0 && (
