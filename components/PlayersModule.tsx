@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-// Added 'Search' is already imported
-import { UserPlus, Archive, ArchiveRestore, Trash2, Search, Eye, EyeOff, Users } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { UserPlus, Archive, ArchiveRestore, Trash2, Search, Eye, EyeOff, Users, Upload, FileText } from 'lucide-react';
 import { Player } from '../types';
 import { storageService } from '../services/storageService';
 
@@ -13,6 +12,7 @@ const PlayersModule: React.FC = () => {
   const [newDisplayName, setNewDisplayName] = useState('');
   const [newFullName, setNewFullName] = useState('');
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setPlayers(storageService.getPlayers());
@@ -47,6 +47,51 @@ const PlayersModule: React.FC = () => {
     setNewFullName('');
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (!text) return;
+
+      const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+      const newPlayers: Player[] = [];
+      const existingNames = new Set(players.map(p => p.displayName.toLowerCase()));
+      const currentNewNames = new Set<string>();
+
+      lines.forEach(line => {
+        const parts = line.split(",").map(p => p.trim());
+        const displayName = parts[0];
+        const fullName = parts[1] || "";
+
+        if (displayName && !existingNames.has(displayName.toLowerCase()) && !currentNewNames.has(displayName.toLowerCase())) {
+          newPlayers.push({
+            id: crypto.randomUUID(),
+            displayName,
+            fullName,
+            isArchived: false,
+          });
+          currentNewNames.add(displayName.toLowerCase());
+        }
+      });
+
+      if (newPlayers.length > 0) {
+        const updatedPlayers = [...players, ...newPlayers];
+        setPlayers(updatedPlayers);
+        storageService.savePlayers(updatedPlayers);
+        alert(`Successfully imported ${newPlayers.length} players!`);
+      } else {
+        alert("No new unique players found in the file. Ensure the format is: DisplayName, FullName");
+      }
+      
+      // Reset input so the same file can be uploaded again if needed
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsText(file);
+  };
+
   const toggleArchive = (id: string) => {
     const updatedPlayers = players.map(p => 
       p.id === id ? { ...p, isArchived: !p.isArchived } : p
@@ -63,7 +108,6 @@ const PlayersModule: React.FC = () => {
     }
   };
 
-  // Improved filtering: status -> search -> sort
   const filteredPlayers = players
     .filter(p => showArchived || !p.isArchived)
     .filter(p => p.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || p.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -94,6 +138,23 @@ const PlayersModule: React.FC = () => {
             {showArchived ? <EyeOff size={18} /> : <Eye size={18} />}
             <span className="whitespace-nowrap">{showArchived ? 'Hide Archived' : 'Show Archived'}</span>
           </button>
+          
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileUpload} 
+            accept=".csv" 
+            className="hidden" 
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center justify-center gap-2 px-4 py-2 border border-blue-200 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+            title="Upload CSV (Format: DisplayName, FullName)"
+          >
+            <Upload size={18} />
+            <span className="whitespace-nowrap">Import CSV</span>
+          </button>
+
           <button
             onClick={() => setIsAdding(!isAdding)}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -155,9 +216,11 @@ const PlayersModule: React.FC = () => {
               className={`p-4 bg-white rounded-xl border ${player.isArchived ? 'border-slate-100 bg-slate-50' : 'border-slate-200'} shadow-sm flex items-center justify-between hover:shadow-md transition-shadow group`}
             >
               <div className="min-w-0 flex-1 mr-2">
-                <h3 className={`font-bold truncate ${player.isArchived ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
-                  {player.displayName}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className={`font-bold truncate ${player.isArchived ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                    {player.displayName}
+                  </h3>
+                </div>
                 {player.fullName && (
                   <p className={`text-sm truncate ${player.isArchived ? 'text-slate-400' : 'text-slate-500'}`}>
                     {player.fullName}
@@ -192,7 +255,7 @@ const PlayersModule: React.FC = () => {
             ) : (
               <>
                 <Users className="mx-auto mb-3 text-slate-300" size={48} />
-                <p>No players found. Add your first player to get started!</p>
+                <p>No players found. Add or import players to get started!</p>
               </>
             )}
           </div>
