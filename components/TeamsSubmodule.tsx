@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, CheckCircle2, Shield, UserX } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, Shield, UserX, XCircle } from 'lucide-react';
 import { Training, Team, TeamColor, Participant } from '../types';
 import { storageService } from '../services/storageService';
 
@@ -18,7 +18,7 @@ const colorMap: Record<TeamColor, string> = {
 };
 
 const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
-  const [selectedColor, setSelectedColor] = useState<TeamColor>(TeamColor.Blue);
+  const [selectedColor, setSelectedColor] = useState<TeamColor | null>(null);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [activePlayerIds, setActivePlayerIds] = useState<Set<string>>(new Set());
@@ -37,11 +37,37 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
     return ids;
   }, [training.teams]);
 
-  // Anyone already in the training participants list is valid to be in a team for THIS training.
-  const validParticipants = training.participants;
+  // Identify colors already used in this training
+  const usedColors = useMemo(() => {
+    return new Set(training.teams.map(t => t.color));
+  }, [training.teams]);
 
-  // Filter out already assigned players for the "available" count
-  const availableParticipants = validParticipants.filter(p => !assignedPlayerIds.has(p.id));
+  // Available colors
+  const availableColors = useMemo(() => {
+    return Object.values(TeamColor).filter(c => !usedColors.has(c));
+  }, [usedColors]);
+
+  // Sort participants: unassigned first, then alphabetical
+  const sortedParticipants = useMemo(() => {
+    return [...training.participants].sort((a, b) => {
+      const isAssignedA = assignedPlayerIds.has(a.id);
+      const isAssignedB = assignedPlayerIds.has(b.id);
+
+      if (isAssignedA !== isAssignedB) {
+        return isAssignedA ? 1 : -1;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [training.participants, assignedPlayerIds]);
+
+  const availableParticipantsCount = training.participants.filter(p => !assignedPlayerIds.has(p.id)).length;
+
+  const handleStartAdding = () => {
+    if (availableColors.length > 0) {
+      setSelectedColor(availableColors[0]);
+      setIsAdding(true);
+    }
+  };
 
   const toggleMemberSelection = (id: string, isAssigned: boolean) => {
     if (isAssigned) return;
@@ -51,7 +77,7 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
   };
 
   const handleAddTeam = () => {
-    if (selectedMemberIds.length === 0) return;
+    if (selectedMemberIds.length === 0 || !selectedColor) return;
 
     const newTeam: Team = {
       id: crypto.randomUUID(),
@@ -66,6 +92,7 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
 
     setIsAdding(false);
     setSelectedMemberIds([]);
+    setSelectedColor(null);
   };
 
   const deleteTeam = (id: string) => {
@@ -80,11 +107,13 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-bold text-slate-800">Training Teams</h3>
-          <p className="text-sm text-slate-500">{availableParticipants.length} players available to assign</p>
+          <p className="text-sm text-slate-500">
+            {availableParticipantsCount} players available | {availableColors.length} colors left
+          </p>
         </div>
         <button
-          disabled={availableParticipants.length === 0}
-          onClick={() => setIsAdding(true)}
+          disabled={availableParticipantsCount === 0 || availableColors.length === 0}
+          onClick={handleStartAdding}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-100"
         >
           <Plus size={18} />
@@ -96,30 +125,40 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
         <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-6 animate-in slide-in-from-top-4 duration-300">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
-              <label className="block text-sm font-bold text-slate-700">1. Select Team Color</label>
+              <label className="block text-sm font-bold text-slate-700">1. Select Team Color (Unique)</label>
               <div className="flex flex-wrap gap-3">
-                {Object.values(TeamColor).map(color => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setSelectedColor(color)}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${colorMap[color]} ${
-                      selectedColor === color ? 'ring-4 ring-blue-300 scale-110 shadow-lg' : 'opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    {selectedColor === color && <CheckCircle2 size={24} />}
-                  </button>
-                ))}
+                {Object.values(TeamColor).map(color => {
+                  const isTaken = usedColors.has(color);
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      disabled={isTaken}
+                      onClick={() => setSelectedColor(color)}
+                      className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${colorMap[color]} ${
+                        selectedColor === color 
+                          ? 'ring-4 ring-blue-300 scale-110 shadow-lg z-10' 
+                          : isTaken 
+                          ? 'opacity-20 cursor-not-allowed grayscale border-slate-200' 
+                          : 'opacity-60 hover:opacity-100 hover:scale-105'
+                      }`}
+                      title={isTaken ? `${color} is already taken` : color}
+                    >
+                      {selectedColor === color && <CheckCircle2 size={24} />}
+                      {isTaken && <XCircle size={20} className="text-slate-400" />}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-end">
                 <label className="block text-sm font-bold text-slate-700">2. Select Players ({selectedMemberIds.length})</label>
-                <span className="text-xs text-slate-400 font-medium">{availableParticipants.length} available</span>
+                <span className="text-xs text-slate-400 font-medium">{availableParticipantsCount} available</span>
               </div>
               <div className="max-h-60 overflow-y-auto space-y-1 pr-2 custom-scrollbar bg-white rounded-xl border border-slate-200 p-2">
-                {validParticipants.map(p => {
+                {sortedParticipants.map(p => {
                   const isArchived = !p.isGuest && !activePlayerIds.has(p.id);
                   const isAssigned = assignedPlayerIds.has(p.id);
                   
@@ -152,7 +191,7 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
                     </button>
                   );
                 })}
-                {validParticipants.length === 0 && (
+                {sortedParticipants.length === 0 && (
                   <p className="text-slate-400 italic text-sm p-2 text-center">No participants available in this training.</p>
                 )}
               </div>
@@ -162,14 +201,14 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-200">
             <button
               type="button"
-              onClick={() => setIsAdding(false)}
+              onClick={() => { setIsAdding(false); setSelectedColor(null); }}
               className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium"
             >
               Cancel
             </button>
             <button
               type="button"
-              disabled={selectedMemberIds.length === 0}
+              disabled={selectedMemberIds.length === 0 || !selectedColor}
               onClick={handleAddTeam}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md shadow-blue-100 disabled:opacity-50 disabled:shadow-none transition-all"
             >
@@ -223,6 +262,12 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
             <Shield className="mx-auto mb-3 opacity-20" size={48} />
             <p className="font-medium">No teams created yet.</p>
             <p className="text-sm">Start by creating at least two teams for matches.</p>
+          </div>
+        )}
+        {availableColors.length === 0 && training.teams.length > 0 && !isAdding && (
+          <div className="col-span-full p-4 bg-orange-50 border border-orange-100 rounded-xl text-orange-700 text-sm flex items-center gap-2">
+            <UserX size={16} />
+            All team colors for this training have been used.
           </div>
         )}
       </div>
