@@ -199,10 +199,10 @@ const MatchesSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
         <button
           disabled={training.teams.length < 2}
           onClick={() => setIsCreating(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="flex items-center justify-center w-12 h-12 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-200 active:scale-90"
+          aria-label="New Match"
         >
-          <Plus size={18} />
-          New Match
+          <Plus size={24} />
         </button>
       </div>
 

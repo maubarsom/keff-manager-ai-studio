@@ -86,10 +86,10 @@ const TrainingsModule: React.FC = () => {
         </div>
         <button
           onClick={() => setIsCreating(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center justify-center w-12 h-12 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-90"
+          aria-label="New Training"
         >
-          <Plus size={18} />
-          New Training
+          <Plus size={24} />
         </button>
       </div>
 
