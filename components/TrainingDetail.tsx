@@ -1,15 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-// Removed SwatchesCursor because it is not exported by lucide-react and is not used in the component
-import { ChevronLeft, Users, Shield, Trophy } from 'lucide-react';
+import { ChevronLeft, Users, Shield, Trophy, Settings } from 'lucide-react';
 import { Training } from '../types';
 import { storageService } from '../services/storageService';
 import ParticipantsSubmodule from './ParticipantsSubmodule';
 import TeamsSubmodule from './TeamsSubmodule';
 import MatchesSubmodule from './MatchesSubmodule';
+import GeneralSubmodule from './GeneralSubmodule';
 
-type Tab = 'participants' | 'teams' | 'matches';
+type Tab = 'general' | 'participants' | 'teams' | 'matches';
 
 const TrainingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -54,6 +54,15 @@ const TrainingDetail: React.FC = () => {
 
       <div className="flex border-b border-slate-200 overflow-x-auto no-scrollbar bg-white rounded-t-xl">
         <button
+          onClick={() => setActiveTab('general')}
+          className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-bold border-b-2 transition-all ${
+            activeTab === 'general' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:bg-slate-50'
+          }`}
+        >
+          <Settings size={18} />
+          General
+        </button>
+        <button
           onClick={() => setActiveTab('participants')}
           className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-bold border-b-2 transition-all ${
             activeTab === 'participants' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:bg-slate-50'
@@ -83,6 +92,9 @@ const TrainingDetail: React.FC = () => {
       </div>
 
       <div className="bg-white p-6 rounded-b-xl shadow-sm border border-t-0 border-slate-200 min-h-[400px]">
+        {activeTab === 'general' && (
+          <GeneralSubmodule training={training} onUpdate={handleUpdate} />
+        )}
         {activeTab === 'participants' && (
           <ParticipantsSubmodule training={training} onUpdate={handleUpdate} />
         )}
