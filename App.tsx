@@ -10,6 +10,10 @@ import PitchesModule from './components/PitchesModule';
 const Navigation = () => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 flex justify-around items-center md:top-0 md:bottom-auto md:border-t-0 md:border-b md:justify-start md:gap-8 z-50">
+      <Link to="/trainings" className="flex flex-col md:flex-row items-center gap-1 text-slate-600 hover:text-blue-600 transition-colors">
+        <Calendar size={20} />
+        <span className="text-xs md:text-sm font-medium">Trainings</span>
+      </Link>
       <Link to="/players" className="flex flex-col md:flex-row items-center gap-1 text-slate-600 hover:text-blue-600 transition-colors">
         <Users size={20} />
         <span className="text-xs md:text-sm font-medium">Players</span>
@@ -17,10 +21,6 @@ const Navigation = () => {
       <Link to="/pitches" className="flex flex-col md:flex-row items-center gap-1 text-slate-600 hover:text-blue-600 transition-colors">
         <MapPin size={20} />
         <span className="text-xs md:text-sm font-medium">Pitches</span>
-      </Link>
-      <Link to="/trainings" className="flex flex-col md:flex-row items-center gap-1 text-slate-600 hover:text-blue-600 transition-colors">
-        <Calendar size={20} />
-        <span className="text-xs md:text-sm font-medium">Trainings</span>
       </Link>
     </nav>
   );
