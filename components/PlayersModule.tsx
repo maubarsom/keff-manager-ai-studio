@@ -22,20 +22,20 @@ const PlayersModule: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    if (!newDisplayName || !newFullName) {
-      setError('Please fill in all fields');
+    if (!newDisplayName.trim()) {
+      setError('Display name is required');
       return;
     }
 
-    if (players.some(p => p.displayName.toLowerCase() === newDisplayName.toLowerCase())) {
+    if (players.some(p => p.displayName.toLowerCase() === newDisplayName.trim().toLowerCase())) {
       setError('Display name must be unique');
       return;
     }
 
     const newPlayer: Player = {
       id: crypto.randomUUID(),
-      displayName: newDisplayName,
-      fullName: newFullName,
+      displayName: newDisplayName.trim(),
+      fullName: newFullName.trim(),
       isArchived: false,
     };
 
@@ -66,7 +66,7 @@ const PlayersModule: React.FC = () => {
   // Improved filtering: status -> search -> sort
   const filteredPlayers = players
     .filter(p => showArchived || !p.isArchived)
-    .filter(p => p.displayName.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter(p => p.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || p.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => a.displayName.localeCompare(b.displayName));
 
   return (
@@ -118,7 +118,7 @@ const PlayersModule: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Full Name <span className="text-slate-400 font-normal">(Optional)</span></label>
               <input
                 type="text"
                 value={newFullName}
@@ -154,15 +154,17 @@ const PlayersModule: React.FC = () => {
               key={player.id}
               className={`p-4 bg-white rounded-xl border ${player.isArchived ? 'border-slate-100 bg-slate-50' : 'border-slate-200'} shadow-sm flex items-center justify-between hover:shadow-md transition-shadow group`}
             >
-              <div>
-                <h3 className={`font-bold ${player.isArchived ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+              <div className="min-w-0 flex-1 mr-2">
+                <h3 className={`font-bold truncate ${player.isArchived ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
                   {player.displayName}
                 </h3>
-                <p className={`text-sm ${player.isArchived ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {player.fullName}
-                </p>
+                {player.fullName && (
+                  <p className={`text-sm truncate ${player.isArchived ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {player.fullName}
+                  </p>
+                )}
               </div>
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                 <button
                   onClick={() => toggleArchive(player.id)}
                   title={player.isArchived ? 'Restore' : 'Archive'}
