@@ -134,8 +134,8 @@ const MatchesSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
                 </div>
                 <div className="text-4xl md:text-6xl font-black">{activeMatch.scoreA}</div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full max-w-[120px]">
-                  <button onClick={() => updateActiveScore('A', -1)} className="h-8 md:h-10 w-full md:w-10 rounded-lg md:rounded-full border border-slate-700 flex items-center justify-center hover:bg-slate-800 transition-colors">-</button>
                   <button onClick={() => updateActiveScore('A', 1)} className="px-2 md:px-6 py-1.5 md:py-2 bg-slate-100 text-slate-900 rounded-lg md:rounded-xl font-bold hover:bg-white transition-colors text-xs md:text-base flex-1">GOAL</button>
+                  <button onClick={() => updateActiveScore('A', -1)} className="h-8 md:h-10 w-full md:w-10 rounded-lg md:rounded-full border border-slate-700 flex items-center justify-center hover:bg-slate-800 transition-colors">-</button>
                 </div>
               </div>
 
@@ -149,8 +149,8 @@ const MatchesSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
                 </div>
                 <div className="text-4xl md:text-6xl font-black">{activeMatch.scoreB}</div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full max-w-[120px]">
-                  <button onClick={() => updateActiveScore('B', -1)} className="h-8 md:h-10 w-full md:w-10 rounded-lg md:rounded-full border border-slate-700 flex items-center justify-center hover:bg-slate-800 transition-colors">-</button>
                   <button onClick={() => updateActiveScore('B', 1)} className="px-2 md:px-6 py-1.5 md:py-2 bg-slate-100 text-slate-900 rounded-lg md:rounded-xl font-bold hover:bg-white transition-colors text-xs md:text-base flex-1">GOAL</button>
+                  <button onClick={() => updateActiveScore('B', -1)} className="h-8 md:h-10 w-full md:w-10 rounded-lg md:rounded-full border border-slate-700 flex items-center justify-center hover:bg-slate-800 transition-colors">-</button>
                 </div>
               </div>
             </div>
@@ -178,12 +178,6 @@ const MatchesSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
                   title="Add 10 seconds"
                 >
                   +10s
-                </button>
-                <button 
-                  onClick={() => { setTimeLeft(0); setIsActive(false); }} 
-                  className="flex-1 sm:w-14 sm:h-14 h-12 bg-red-600/20 text-red-500 rounded-xl md:rounded-2xl hover:bg-red-600/30 flex items-center justify-center"
-                >
-                  <Square size={20} fill="currentColor" />
                 </button>
               </div>
             </div>
