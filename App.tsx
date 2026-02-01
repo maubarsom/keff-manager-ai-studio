@@ -31,7 +31,7 @@ const Header = () => (
     <div className="max-w-5xl mx-auto flex items-center justify-between">
       <div className="flex items-center gap-2">
         <Trophy size={24} />
-        <h1 className="text-xl font-bold tracking-tight">Soccer Tracker</h1>
+        <h1 className="text-xl font-bold tracking-tight">KEFF training manager</h1>
       </div>
     </div>
   </header>
