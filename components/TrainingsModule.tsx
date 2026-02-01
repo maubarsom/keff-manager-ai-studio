@@ -8,9 +8,9 @@ import { storageService } from '../services/storageService';
 const TrainingsModule: React.FC = () => {
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [isCreating, setIsCreating] = useState(false);
-  const [newDate, setNewDate] = useState('');
+  const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [newLocation, setNewLocation] = useState('');
-  const [newMatchLength, setNewMatchLength] = useState('10');
+  const [newMatchLength, setNewMatchLength] = useState('4');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -39,6 +39,10 @@ const TrainingsModule: React.FC = () => {
     setTrainings(updated);
     storageService.saveTrainings(updated);
     setIsCreating(false);
+    // Reset defaults for next time
+    setNewDate(new Date().toISOString().split('T')[0]);
+    setNewLocation('');
+    setNewMatchLength('4');
     navigate(`/trainings/${newTraining.id}`);
   };
 
@@ -137,7 +141,7 @@ const TrainingsModule: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-blue-600 font-bold">
                   <CalendarIcon size={18} />
-                  <span>{new Date(training.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                  <span>{new Date(training.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}</span>
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-slate-500">
