@@ -1,0 +1,5 @@
+{
+  "name": "Keff manager",
+  "description": "A comprehensive app to manage players, trainings, teams, and live soccer matches with score tracking and timers.",
+  "requestFramePermissions": []
+}
