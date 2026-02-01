@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Users, Shield, SwatchesCursor, Trophy } from 'lucide-react';
+// Removed SwatchesCursor because it is not exported by lucide-react and is not used in the component
+import { ChevronLeft, Users, Shield, Trophy } from 'lucide-react';
 import { Training } from '../types';
 import { storageService } from '../services/storageService';
 import ParticipantsSubmodule from './ParticipantsSubmodule';

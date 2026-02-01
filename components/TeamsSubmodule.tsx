@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Trash2, CheckCircle2, Shield } from 'lucide-react';
 import { Training, Team, TeamColor, Participant } from '../types';
+import { storageService } from '../services/storageService';
 
 interface Props {
   training: Training;
@@ -20,6 +21,15 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
   const [selectedColor, setSelectedColor] = useState<TeamColor>(TeamColor.Blue);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [activePlayerIds, setActivePlayerIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const players = storageService.getPlayers();
+    setActivePlayerIds(new Set(players.filter(p => !p.isArchived).map(p => p.id)));
+  }, []);
+
+  // Anyone already in the training participants list is valid to be in a team for THIS training.
+  const validParticipants = training.participants;
 
   const toggleMemberSelection = (id: string) => {
     setSelectedMemberIds(prev => 
@@ -57,7 +67,7 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-bold text-slate-800">Training Teams</h3>
         <button
-          disabled={training.participants.length === 0}
+          disabled={validParticipants.length === 0}
           onClick={() => setIsAdding(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
@@ -89,20 +99,28 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
             <div className="space-y-4">
               <label className="block text-sm font-bold text-slate-700">2. Select Players ({selectedMemberIds.length})</label>
               <div className="max-h-60 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
-                {training.participants.map(p => (
-                  <button
-                    key={p.id}
-                    onClick={() => toggleMemberSelection(p.id)}
-                    className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
-                      selectedMemberIds.includes(p.id)
-                        ? 'bg-blue-100 text-blue-700 font-bold'
-                        : 'hover:bg-slate-200 text-slate-600'
-                    }`}
-                  >
-                    <span>{p.name}</span>
-                    {selectedMemberIds.includes(p.id) && <CheckCircle2 size={16} />}
-                  </button>
-                ))}
+                {validParticipants.map(p => {
+                  const isArchived = !p.isGuest && !activePlayerIds.has(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => toggleMemberSelection(p.id)}
+                      className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
+                        selectedMemberIds.includes(p.id)
+                          ? 'bg-blue-100 text-blue-700 font-bold'
+                          : 'hover:bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      <span className={isArchived ? 'opacity-50' : ''}>
+                        {p.name} {isArchived && <span className="text-[10px] bg-slate-200 px-1 rounded ml-1">Archived</span>}
+                      </span>
+                      {selectedMemberIds.includes(p.id) && <CheckCircle2 size={16} />}
+                    </button>
+                  );
+                })}
+                {validParticipants.length === 0 && (
+                  <p className="text-slate-400 italic text-sm p-2">No participants available in this training.</p>
+                )}
               </div>
             </div>
           </div>
@@ -144,9 +162,10 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
               <div className="flex flex-wrap gap-2">
                 {team.memberIds.map(mid => {
                   const p = training.participants.find(part => part.id === mid);
+                  const isArchived = !p?.isGuest && !activePlayerIds.has(mid);
                   return (
-                    <span key={mid} className="px-3 py-1 bg-slate-100 text-slate-700 text-sm rounded-full font-medium">
-                      {p?.name || 'Unknown'}
+                    <span key={mid} className={`px-3 py-1 text-sm rounded-full font-medium ${isArchived ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-700'}`}>
+                      {p?.name || 'Unknown'} {isArchived && '(Archived)'}
                     </span>
                   );
                 })}

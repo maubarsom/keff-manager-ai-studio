@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-// Added 'Users' to imports from lucide-react
+// Added 'Search' is already imported
 import { UserPlus, Archive, ArchiveRestore, Trash2, Search, Eye, EyeOff, Users } from 'lucide-react';
 import { Player } from '../types';
 import { storageService } from '../services/storageService';
@@ -7,6 +8,7 @@ import { storageService } from '../services/storageService';
 const PlayersModule: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [showArchived, setShowArchived] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState('');
   const [newFullName, setNewFullName] = useState('');
@@ -61,7 +63,11 @@ const PlayersModule: React.FC = () => {
     }
   };
 
-  const filteredPlayers = players.filter(p => showArchived || !p.isArchived);
+  // Improved filtering: status -> search -> sort
+  const filteredPlayers = players
+    .filter(p => showArchived || !p.isArchived)
+    .filter(p => p.displayName.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -70,20 +76,30 @@ const PlayersModule: React.FC = () => {
           <h2 className="text-2xl font-bold text-slate-800">Players Management</h2>
           <p className="text-slate-500">Add and manage your team roster</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-64 transition-all"
+            />
+          </div>
           <button
             onClick={() => setShowArchived(!showArchived)}
-            className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-slate-600"
+            className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-slate-600"
           >
             {showArchived ? <EyeOff size={18} /> : <Eye size={18} />}
-            {showArchived ? 'Hide Archived' : 'Show Archived'}
+            <span className="whitespace-nowrap">{showArchived ? 'Hide Archived' : 'Show Archived'}</span>
           </button>
           <button
             onClick={() => setIsAdding(!isAdding)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <UserPlus size={18} />
-            Add Player
+            <span className="whitespace-nowrap">Add Player</span>
           </button>
         </div>
       </div>
@@ -166,8 +182,17 @@ const PlayersModule: React.FC = () => {
           ))
         ) : (
           <div className="col-span-full py-12 text-center text-slate-500 border-2 border-dashed border-slate-200 rounded-xl">
-            <Users className="mx-auto mb-3 text-slate-300" size={48} />
-            <p>No players found. Add your first player to get started!</p>
+            {searchTerm ? (
+              <>
+                <Search className="mx-auto mb-3 text-slate-300" size={48} />
+                <p>No players match your search "{searchTerm}"</p>
+              </>
+            ) : (
+              <>
+                <Users className="mx-auto mb-3 text-slate-300" size={48} />
+                <p>No players found. Add your first player to get started!</p>
+              </>
+            )}
           </div>
         )}
       </div>

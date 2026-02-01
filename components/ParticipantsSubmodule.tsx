@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Check, Plus, Trash2, UserCircle } from 'lucide-react';
 import { Training, Player, Participant } from '../types';
 import { storageService } from '../services/storageService';
@@ -14,8 +14,17 @@ const ParticipantsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
   const [guestName, setGuestName] = useState('');
 
   useEffect(() => {
-    setAllPlayers(storageService.getPlayers().filter(p => !p.isArchived));
+    setAllPlayers(storageService.getPlayers());
   }, []);
+
+  // Potential participants for the "Role Call" grid: Only players who are NOT archived.
+  const availablePlayers = useMemo(() => 
+    allPlayers.filter(p => !p.isArchived), 
+  [allPlayers]);
+
+  // For the total count and summary, we show all participants actually stored in the training.
+  // This ensures historical trainings aren't "emptied" when players are archived.
+  const visibleParticipants = training.participants;
 
   const togglePlayer = (player: Player) => {
     const isAlreadyIn = training.participants.some(p => p.id === player.id);
@@ -61,9 +70,9 @@ const ParticipantsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
-          <h3 className="text-lg font-bold text-slate-800 mb-4">Role Call (Regular Players)</h3>
+          <h3 className="text-lg font-bold text-slate-800 mb-4">Role Call (Active Players)</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {allPlayers.map(player => {
+            {availablePlayers.map(player => {
               const isActive = training.participants.some(p => p.id === player.id);
               return (
                 <button
@@ -81,8 +90,10 @@ const ParticipantsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
               );
             })}
           </div>
-          {allPlayers.length === 0 && (
-            <p className="text-slate-500 italic">No regular players available. Add them in the Players module.</p>
+          {availablePlayers.length === 0 && (
+            <div className="p-8 text-center border border-dashed border-slate-200 rounded-xl">
+               <p className="text-slate-400 italic">No active (non-archived) players available.</p>
+            </div>
           )}
         </div>
 
@@ -129,9 +140,9 @@ const ParticipantsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
       </div>
 
       <div className="pt-6 border-t border-slate-100 flex items-center justify-between text-slate-500">
-        <span className="font-bold">{training.participants.length} Total Participants</span>
+        <span className="font-bold">{visibleParticipants.length} Total Participants</span>
         <span className="text-sm">
-          {training.participants.filter(p => !p.isGuest).length} Regulars | {training.participants.filter(p => p.isGuest).length} Guests
+          {visibleParticipants.filter(p => !p.isGuest).length} Regulars | {visibleParticipants.filter(p => p.isGuest).length} Guests
         </span>
       </div>
     </div>
