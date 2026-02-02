@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, CheckCircle2, Shield, UserX, XCircle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, Shield, UserX, XCircle, Trash } from 'lucide-react';
 import { Training, Team, TeamColor, Participant } from '../types';
 import { storageService } from '../services/storageService';
 
@@ -102,6 +102,19 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
     });
   };
 
+  const clearAllTeams = () => {
+    if (training.teams.length === 0) return;
+    if (window.confirm('Are you sure you want to remove all teams? This will unassign all players currently in teams for this training.')) {
+      onUpdate({
+        ...training,
+        teams: []
+      });
+      setIsAdding(false);
+      setSelectedMemberIds([]);
+      setSelectedColor(null);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -111,14 +124,26 @@ const TeamsSubmodule: React.FC<Props> = ({ training, onUpdate }) => {
             {availableParticipantsCount} players available | {availableColors.length} colors left
           </p>
         </div>
-        <button
-          disabled={availableParticipantsCount === 0 || availableColors.length === 0}
-          onClick={handleStartAdding}
-          className="flex items-center justify-center w-12 h-12 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-200 active:scale-90"
-          aria-label="Create Team"
-        >
-          <Plus size={24} />
-        </button>
+        <div className="flex items-center gap-3">
+          {training.teams.length > 0 && (
+            <button
+              onClick={clearAllTeams}
+              className="flex items-center justify-center gap-2 px-4 h-12 bg-slate-100 text-slate-600 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all font-bold text-sm"
+              title="Clear all teams"
+            >
+              <Trash size={18} />
+              <span className="hidden sm:inline">Clear Teams</span>
+            </button>
+          )}
+          <button
+            disabled={availableParticipantsCount === 0 || availableColors.length === 0}
+            onClick={handleStartAdding}
+            className="flex items-center justify-center w-12 h-12 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-200 active:scale-90"
+            aria-label="Create Team"
+          >
+            <Plus size={24} />
+          </button>
+        </div>
       </div>
 
       {isAdding && (
